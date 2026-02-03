@@ -4,19 +4,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DNA Replication: Leading & Lagging | Wynscape</title>
+    <title>DNA and Genomics | Wynscape</title>
     <style>
         :root {
             --primary: #2563eb;       /* Blue - Template DNA */
             --secondary: #10b981;     /* Green - New DNA */
-            --accent: #f43f5e;        /* Red/Pink - RNA Primer */
+            --accent: #f97316;        /* Orange - RNA Primer */
+            --helicase: #64748b;      /* Grey - Helicase */
             --bg: #ffffff;
             --surface: #f8fafc;
             --text-main: #0f172a;
             --text-muted: #64748b;
             --border: #e2e8f0;
-            --radius: 16px;
-            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --radius: 12px;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
 
         * {
@@ -33,38 +34,41 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-height: 100vh;
+            height: 100vh; /* Fixed height for mobile app feel */
+            overflow: hidden;
         }
 
         header {
             width: 100%;
-            max-width: 900px;
-            padding: 20px;
+            max-width: 600px;
+            padding: 15px 20px;
             text-align: center;
-            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
         }
 
         h1 {
-            font-size: 1.25rem;
+            font-size: 1.2rem;
             font-weight: 700;
             margin: 0;
-            color: var(--text-main);
+            line-height: 1.2;
         }
 
         .subtitle {
-            font-size: 0.875rem;
+            font-size: 0.9rem;
             color: var(--text-muted);
-            margin-top: 4px;
+            margin-top: 2px;
+            font-weight: 500;
         }
 
         main {
             width: 100%;
-            max-width: 900px;
-            padding: 20px;
+            max-width: 600px;
+            padding: 0 15px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 15px;
             flex-grow: 1;
+            justify-content: center;
         }
 
         /* Canvas Area */
@@ -75,111 +79,134 @@
             border: 1px solid var(--border);
             position: relative;
             overflow: hidden;
-            touch-action: none; /* Prevent scrolling while interacting */
+            touch-action: none;
+            width: 100%;
+            height: 300px; /* Fixed height for consistency */
         }
 
         canvas {
             display: block;
             width: 100%;
-            height: 350px;
+            height: 100%;
             cursor: crosshair;
-        }
-
-        /* Overlay Labels */
-        .strand-label {
-            position: absolute;
-            font-family: monospace;
-            font-weight: bold;
-            font-size: 1rem;
-            background: rgba(255,255,255,0.8);
-            padding: 2px 6px;
-            border-radius: 4px;
-            pointer-events: none;
         }
 
         /* Controls */
         .controls {
             background: var(--surface);
-            padding: 20px;
+            padding: 15px;
             border-radius: var(--radius);
             border: 1px solid var(--border);
+            flex-shrink: 0;
         }
 
         .slider-container {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         .slider-label {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.9rem;
+            display: block;
+            font-size: 0.85rem;
             font-weight: 600;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
+            color: var(--text-main);
         }
 
+        /* Custom Slider Styling */
         input[type=range] {
             width: 100%;
             -webkit-appearance: none;
             background: transparent;
         }
 
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: 28px;
-            width: 28px;
-            border-radius: 50%;
-            background: var(--text-main); /* Helicase Color */
-            border: 3px solid #fff;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-            cursor: pointer;
-            margin-top: -12px;
-            position: relative;
+        input[type=range]:focus {
+            outline: none;
         }
-        
-        /* Add a Helicase Icon to the slider thumb via CSS is tricky, so we rely on color/label */
 
+        /* Track */
         input[type=range]::-webkit-slider-runnable-track {
             width: 100%;
-            height: 6px;
+            height: 4px;
+            cursor: pointer;
             background: var(--border);
-            border-radius: 3px;
+            border-radius: 2px;
+        }
+        
+        /* Thumb - Triangle Shape */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 20px;
+            background: var(--helicase);
+            cursor: pointer;
+            margin-top: -10px; /* Centers thumb on track */
+            /* Create Triangle pointing right */
+            clip-path: polygon(0 0, 0 100%, 100% 50%); 
+            border: none;
+            box-shadow: none;
+        }
+
+        /* Firefox Support */
+        input[type=range]::-moz-range-thumb {
+            height: 24px;
+            width: 20px;
+            background: var(--helicase);
+            cursor: pointer;
+            border: none;
+            clip-path: polygon(0 0, 0 100%, 100% 50%);
         }
 
         .instruction-box {
-            background: #e0f2fe; /* Light blue */
-            border: 1px solid #bae6fd;
-            padding: 15px;
-            border-radius: 12px;
-            font-size: 0.9rem;
-            color: #0c4a6e;
+            background: #f1f5f9; /* Grey reduced intensity */
+            border: 1px solid #e2e8f0;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: #475569;
+            text-align: center;
+            min-height: 40px;
             display: flex;
             align-items: center;
-            gap: 10px;
-            min-height: 60px;
+            justify-content: center;
         }
 
         .legend {
             display: flex;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 12px;
             font-size: 0.75rem;
             color: var(--text-muted);
             justify-content: center;
-            margin-top: 10px;
+            margin-top: 15px;
         }
         .legend-item { display: flex; align-items: center; gap: 6px; }
-        .dot { width: 10px; height: 10px; border-radius: 50%; }
+        /* Squares for key */
+        .square { width: 10px; height: 10px; border-radius: 2px; }
 
         button.reset {
-            width: 100%;
-            padding: 12px;
-            background: transparent;
-            color: var(--text-muted);
-            border: 1px solid var(--border);
-            border-radius: 10px;
+            display: block;
+            width: auto;
+            min-width: 120px;
+            margin: 15px auto 0 auto;
+            padding: 10px 20px;
+            background: #e2e8f0; /* Light grey box */
+            color: var(--text-main);
+            border: none;
+            border-radius: 8px;
             font-weight: 600;
+            font-size: 0.9rem;
             cursor: pointer;
-            margin-top: 20px;
+            transition: background 0.2s;
+        }
+        button.reset:active { background: #cbd5e1; }
+
+        footer {
+            margin-top: auto;
+            padding: 15px;
+            text-align: center;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            width: 100%;
         }
         
         /* Floating feedback */
@@ -188,14 +215,15 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.75);
             color: white;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 0.9rem;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.85rem;
             pointer-events: none;
             opacity: 0;
             transition: opacity 0.3s;
+            text-align: center;
         }
         .feedback-toast.show { opacity: 1; }
 
@@ -204,55 +232,39 @@
 <body class="no-select">
 
 <header>
-    <h1>DNA Replication Simulator</h1>
-    <div class="subtitle">Leading vs. Lagging Strands</div>
+    <h1>DNA and Genomics</h1>
+    <div class="subtitle">DNA Replication</div>
 </header>
 
 <main>
     <div class="canvas-wrapper">
         <canvas id="dnaCanvas"></canvas>
-        <!-- Static Labels for Ends -->
-        <div class="strand-label" style="top: 10px; left: 10px;">3'</div> <!-- Top Template Left -->
-        <div class="strand-label" style="top: 10px; right: 10px;">5'</div> <!-- Top Template Right -->
-        
-        <div class="strand-label" style="bottom: 10px; left: 10px;">5'</div> <!-- Bottom Template Left -->
-        <div class="strand-label" style="bottom: 10px; right: 10px;">3'</div> <!-- Bottom Template Right -->
-        
         <div id="toast" class="feedback-toast"></div>
     </div>
 
     <div class="controls">
         <div class="slider-container">
-            <div class="slider-label">
-                <span>Helicase Activity (Unzip)</span>
-                <span id="helicaseVal">Start</span>
-            </div>
-            <!-- Range represents the position of the fork moving Left to Right -->
+            <span class="slider-label">Helicase position</span>
             <input type="range" id="helicaseSlider" min="0" max="100" value="10" step="0.5">
         </div>
 
         <div class="instruction-box" id="instructionText">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="16" x2="12" y2="12"></line>
-                <line x1="12" y1="8" x2="12.01" y2="8"></line>
-            </svg>
-            <span>Drag the slider to unzip the DNA. Click on the single strands to add RNA Primers.</span>
+            Use slider to shift position of helicase and unzip the DNA
         </div>
 
         <div class="legend">
-            <div class="legend-item"><div class="dot" style="background: var(--primary)"></div>Template DNA</div>
-            <div class="legend-item"><div class="dot" style="background: var(--secondary)"></div>New DNA</div>
-            <div class="legend-item"><div class="dot" style="background: var(--accent)"></div>RNA Primer</div>
-            <div class="legend-item"><div class="dot" style="background: var(--text-main)"></div>Helicase</div>
+            <div class="legend-item"><div class="square" style="background: var(--primary)"></div>Template DNA</div>
+            <div class="legend-item"><div class="square" style="background: var(--secondary)"></div>New DNA</div>
+            <div class="legend-item"><div class="square" style="background: var(--accent)"></div>RNA Primer</div>
+            <div class="legend-item"><div class="square" style="background: var(--helicase)"></div>Helicase</div>
         </div>
 
-        <button class="reset" id="resetBtn">Reset Simulation</button>
+        <button class="reset" id="resetBtn">↺ Reset</button>
     </div>
 </main>
 
 <footer>
-    &copy; 2024 Wynscape Interactives. All rights reserved.
+    All rights reserved
 </footer>
 
 <script>
@@ -273,34 +285,24 @@
     const canvas = document.getElementById('dnaCanvas');
     const ctx = canvas.getContext('2d');
     const slider = document.getElementById('helicaseSlider');
-    const infoBox = document.getElementById('instructionText').querySelector('span');
+    const infoBox = document.getElementById('instructionText');
     const toast = document.getElementById('toast');
 
     // Graphics Settings
     let width, height;
     const STRAND_GAP = 100; // Vertical distance between unzipped strands
-    const BASE_PAIR_SPACING = 20; 
     
     // Game State
     let forkProgress = 0.1; // 0.0 to 1.0 (Percentage of canvas width unzipped)
-    let fragments = []; // Array of synthesized DNA segments
+    let fragments = []; 
     
-    /**
-     * Fragment Structure:
-     * {
-     *   strand: 'top' | 'bottom',
-     *   startX: number, // Pixel position where primer was placed
-     *   currentX: number, // Pixel position of current growth
-     *   direction: 1 | -1, // 1 = Right (Leading), -1 = Left (Lagging)
-     *   type: 'primer' // initially, becomes 'dna' visually
-     * }
-     */
-
     function resize() {
         const dpr = window.devicePixelRatio || 1;
-        const rect = canvas.getBoundingClientRect();
-        width = rect.width;
-        height = rect.height;
+        // Use container dimensions
+        const wrapper = document.querySelector('.canvas-wrapper');
+        width = wrapper.clientWidth;
+        height = wrapper.clientHeight;
+        
         canvas.width = width * dpr;
         canvas.height = height * dpr;
         ctx.scale(dpr, dpr);
@@ -315,10 +317,6 @@
      */
     slider.addEventListener('input', (e) => {
         forkProgress = parseInt(e.target.value) / 100;
-        
-        // Prevent closing the fork too much if synthesis has happened (optional realism)
-        // For this interactive, we allow free movement to let user explore
-        
         updateInstructions();
     });
 
@@ -360,40 +358,26 @@
         const forkX = getForkX();
 
         if (strand === 'top') {
-            // LEADING STRAND LOGIC
-            // Template is 3'->5' (L->R). New strand grows 5'->3' (L->R).
-            // User should place primer as far Left as possible to start.
-            
-            // Check if a primer already exists that covers this area
             const existing = fragments.find(f => f.strand === 'top');
             
             if (existing) {
-                showToast("Leading strand already primed!");
+                showToast("Already primed!");
             } else {
-                // Ideally place near the start (left)
                 if (x < forkX) {
                     addFragment('top', x, 1); // Direction 1 (Right)
-                    showToast("Primer added! Synthesizing Leading Strand.");
-                    infoBox.innerText = "Good job! The Leading strand synthesizes continuously towards the fork.";
+                    showToast("Primer added!");
                 }
             }
         } 
         else if (strand === 'bottom') {
-            // LAGGING STRAND LOGIC
-            // Template is 5'->3' (L->R). New strand grows 5'->3' (R->L).
-            // User must place primer near the fork.
-            
-            // Check for overlaps. 
-            // We allow multiple fragments on bottom.
-            // Check if we are clicking inside an existing fragment
+            // Check overlaps
             const overlap = fragments.find(f => 
                 f.strand === 'bottom' && x <= f.startX && x >= f.currentX
             );
 
             if (!overlap) {
                 addFragment('bottom', x, -1); // Direction -1 (Left)
-                showToast("Primer added! Creating Okazaki Fragment.");
-                infoBox.innerText = "Notice: As the fork opens, you will need to add more primers to the gap.";
+                showToast("Primer added!");
             }
         }
     }
@@ -406,6 +390,7 @@
             direction: direction,
             active: true
         });
+        updateInstructions();
     }
 
     function showToast(msg) {
@@ -415,11 +400,10 @@
     }
 
     function updateInstructions() {
-        const forkX = getForkX();
-        if (forkProgress < 0.2) {
-            infoBox.innerText = "Use the slider to act as Helicase and unzip the DNA.";
-        } else if (fragments.length === 0) {
-            infoBox.innerText = "The strands are exposed! Click on the Top or Bottom strand to attach an RNA Primer.";
+        if (fragments.length === 0) {
+            infoBox.innerText = "Use slider as helicase to unzip the DNA. Click strands to add primers.";
+        } else {
+            infoBox.innerText = "Keep unzipping and adding primers to fill the gaps.";
         }
     }
 
@@ -432,29 +416,26 @@
         fragments.forEach(f => {
             if (!f.active) return;
 
-            // Growth Speed
-            const speed = 2; 
+            // Synthesis Speed (Reduced by 50% from previous 2 to 1)
+            const speed = 1; 
 
             if (f.direction === 1) { 
-                // Leading (Top) -> Grows Right
-                // Stop if we hit the fork
+                // Top -> Grows Right
                 if (f.currentX < forkX - 10) {
                     f.currentX += speed;
                 }
             } else { 
-                // Lagging (Bottom) -> Grows Left
-                // Stop if we hit the end of canvas OR another fragment
+                // Bottom -> Grows Left
                 let blocked = false;
                 
-                // Check collision with "previous" fragment (which is to the left)
-                // Find fragment on same strand whose startX is < this.currentX
+                // Collision with previous fragment
                 const neighbor = fragments.find(n => 
-                    n.strand === 'bottom' && n !== f && Math.abs(n.startX - f.currentX) < 5
+                    n.strand === 'bottom' && n !== f && Math.abs(n.startX - f.currentX) < 4
                 );
 
                 if (neighbor || f.currentX <= 20) {
                     blocked = true;
-                    f.active = false; // DNA Ligase would join them here
+                    f.active = false; 
                 }
 
                 if (!blocked) {
@@ -492,11 +473,10 @@
         // Double Helix (Right side)
         ctx.beginPath();
         ctx.moveTo(forkX, topY);
-        // Draw a simple representation of coiled DNA
         for (let x = forkX; x < width; x+=5) {
             const progress = (x - forkX) / 20;
             const offset = Math.sin(progress) * (STRAND_GAP/2);
-            ctx.lineTo(x, centerY - offset); // Top-ish
+            ctx.lineTo(x, centerY - offset); 
         }
         ctx.stroke();
 
@@ -504,27 +484,26 @@
         ctx.moveTo(forkX, bottomY);
         for (let x = forkX; x < width; x+=5) {
             const progress = (x - forkX) / 20;
-            const offset = Math.sin(progress + Math.PI) * (STRAND_GAP/2); // Phase shifted
-            ctx.lineTo(x, centerY - offset); // Bottom-ish
+            const offset = Math.sin(progress + Math.PI) * (STRAND_GAP/2); 
+            ctx.lineTo(x, centerY - offset); 
         }
         ctx.stroke();
 
-        // Draw Base Pairs in the Helix
-        ctx.lineWidth = 2;
+        // Draw Base Pairs
+        ctx.lineWidth = 1;
         ctx.strokeStyle = '#cbd5e1';
-        for (let x = forkX + 10; x < width; x+=BASE_PAIR_SPACING) {
+        for (let x = forkX + 10; x < width; x+=15) {
             const progress = (x - forkX) / 20;
             const y1 = centerY - Math.sin(progress) * (STRAND_GAP/2);
             const y2 = centerY - Math.sin(progress + Math.PI) * (STRAND_GAP/2);
-            
             ctx.beginPath();
             ctx.moveTo(x, y1);
             ctx.lineTo(x, y2);
             ctx.stroke();
         }
 
-        // 2. Draw Helicase (The Slider Position Indicator)
-        ctx.fillStyle = '#0f172a';
+        // 2. Draw Helicase (Triangle Wedge on Canvas)
+        ctx.fillStyle = '#64748b'; // Grey
         ctx.beginPath();
         ctx.moveTo(forkX, topY);
         ctx.lineTo(forkX + 20, centerY);
@@ -533,17 +512,11 @@
 
         // 3. Draw Fragments (New DNA)
         fragments.forEach(f => {
-            const y = f.strand === 'top' ? topY - 12 : bottomY + 12; // Draw slightly outside
-            
-            // Primer Part (Red) - Length approx 20px
+            const y = f.strand === 'top' ? topY - 10 : bottomY + 10; 
             const primerLen = 20;
-            let primerEnd = f.startX + (f.direction * primerLen);
             
-            // If the fragment hasn't grown past primer length, clamp it
-            // Logic simplification: Visual representation
-            
-            // Draw Primer
-            ctx.strokeStyle = '#f43f5e'; // RNA Red
+            // Draw Primer (Orange)
+            ctx.strokeStyle = '#f97316'; 
             ctx.lineWidth = 6;
             ctx.beginPath();
             ctx.moveTo(f.startX, y);
@@ -552,35 +525,45 @@
 
             // Draw DNA Part (Green)
             if (Math.abs(f.currentX - f.startX) > 15) {
-                ctx.strokeStyle = '#10b981'; // DNA Green
+                ctx.strokeStyle = '#10b981'; // Green
                 ctx.beginPath();
                 ctx.moveTo(f.startX + (f.direction * 15), y);
                 ctx.lineTo(f.currentX, y);
                 ctx.stroke();
             }
 
-            // Draw Polymerase (Circle at the tip)
-            if (f.active) {
-                ctx.fillStyle = '#10b981';
-                ctx.beginPath();
-                ctx.arc(f.currentX, y, 6, 0, Math.PI*2);
-                ctx.fill();
-                
-                // Draw Arrow
-                ctx.fillStyle = '#fff';
-                ctx.font = '8px Arial';
-                ctx.fillText(f.direction === 1 ? ">" : "<", f.currentX - 2.5, y + 2.5);
-            }
+            // Draw Permanent Direction Arrow (Triangle)
+            ctx.fillStyle = '#10b981';
+            ctx.beginPath();
+            // Arrowhead logic
+            const arrowSize = 4;
+            // Point of arrow
+            ctx.moveTo(f.currentX + (f.direction * arrowSize), y);
+            // Top back
+            ctx.lineTo(f.currentX - (f.direction * arrowSize), y - arrowSize);
+            // Bottom back
+            ctx.lineTo(f.currentX - (f.direction * arrowSize), y + arrowSize);
+            ctx.fill();
         });
 
-        // 4. Draw Hint Arrows for Polarity
-        ctx.fillStyle = '#94a3b8';
-        ctx.font = '10px sans-serif';
-        // Top Template (Runs 3' -> 5' L->R)
-        // New strand must run 5' -> 3' (L->R)
-        
-        // Bottom Template (Runs 5' -> 3' L->R)
-        // New strand must run 5' -> 3' (R->L)
+        // 4. Draw Labels (3' and 5') close to template
+        ctx.fillStyle = '#64748b';
+        ctx.font = 'bold 12px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // Gap from line (Very close)
+        const lblOffset = 12;
+
+        // Top Strand (3' Left, 5' Right)
+        ctx.fillText("3'", 30, topY - lblOffset);
+        // Calculate Right side roughly based on current helix
+        // For simplicity, we just label the left ends clearly as that's where interaction starts
+        ctx.fillText("5'", width - 30, topY - lblOffset);
+
+        // Bottom Strand (5' Left, 3' Right)
+        ctx.fillText("5'", 30, bottomY + lblOffset);
+        ctx.fillText("3'", width - 30, bottomY + lblOffset);
     }
 
     function loop() {
