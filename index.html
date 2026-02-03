@@ -1,0 +1,606 @@
+<!-- // PROTECTED CONTENT - AUTHORIZED USE ONLY -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DNA Replication: Leading & Lagging | Wynscape</title>
+    <style>
+        :root {
+            --primary: #2563eb;       /* Blue - Template DNA */
+            --secondary: #10b981;     /* Green - New DNA */
+            --accent: #f43f5e;        /* Red/Pink - RNA Primer */
+            --bg: #ffffff;
+            --surface: #f8fafc;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --radius: 16px;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            width: 100%;
+            max-width: 900px;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 0;
+            color: var(--text-main);
+        }
+
+        .subtitle {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        main {
+            width: 100%;
+            max-width: 900px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            flex-grow: 1;
+        }
+
+        /* Canvas Area */
+        .canvas-wrapper {
+            background: var(--surface);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+            touch-action: none; /* Prevent scrolling while interacting */
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 350px;
+            cursor: crosshair;
+        }
+
+        /* Overlay Labels */
+        .strand-label {
+            position: absolute;
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 1rem;
+            background: rgba(255,255,255,0.8);
+            padding: 2px 6px;
+            border-radius: 4px;
+            pointer-events: none;
+        }
+
+        /* Controls */
+        .controls {
+            background: var(--surface);
+            padding: 20px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+        }
+
+        .slider-container {
+            margin-bottom: 20px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        input[type=range] {
+            width: 100%;
+            -webkit-appearance: none;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 28px;
+            width: 28px;
+            border-radius: 50%;
+            background: var(--text-main); /* Helicase Color */
+            border: 3px solid #fff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            cursor: pointer;
+            margin-top: -12px;
+            position: relative;
+        }
+        
+        /* Add a Helicase Icon to the slider thumb via CSS is tricky, so we rely on color/label */
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        .instruction-box {
+            background: #e0f2fe; /* Light blue */
+            border: 1px solid #bae6fd;
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            color: #0c4a6e;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-height: 60px;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; }
+
+        button.reset {
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        
+        /* Floating feedback */
+        .feedback-toast {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .feedback-toast.show { opacity: 1; }
+
+    </style>
+</head>
+<body class="no-select">
+
+<header>
+    <h1>DNA Replication Simulator</h1>
+    <div class="subtitle">Leading vs. Lagging Strands</div>
+</header>
+
+<main>
+    <div class="canvas-wrapper">
+        <canvas id="dnaCanvas"></canvas>
+        <!-- Static Labels for Ends -->
+        <div class="strand-label" style="top: 10px; left: 10px;">3'</div> <!-- Top Template Left -->
+        <div class="strand-label" style="top: 10px; right: 10px;">5'</div> <!-- Top Template Right -->
+        
+        <div class="strand-label" style="bottom: 10px; left: 10px;">5'</div> <!-- Bottom Template Left -->
+        <div class="strand-label" style="bottom: 10px; right: 10px;">3'</div> <!-- Bottom Template Right -->
+        
+        <div id="toast" class="feedback-toast"></div>
+    </div>
+
+    <div class="controls">
+        <div class="slider-container">
+            <div class="slider-label">
+                <span>Helicase Activity (Unzip)</span>
+                <span id="helicaseVal">Start</span>
+            </div>
+            <!-- Range represents the position of the fork moving Left to Right -->
+            <input type="range" id="helicaseSlider" min="0" max="100" value="10" step="0.5">
+        </div>
+
+        <div class="instruction-box" id="instructionText">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            <span>Drag the slider to unzip the DNA. Click on the single strands to add RNA Primers.</span>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="dot" style="background: var(--primary)"></div>Template DNA</div>
+            <div class="legend-item"><div class="dot" style="background: var(--secondary)"></div>New DNA</div>
+            <div class="legend-item"><div class="dot" style="background: var(--accent)"></div>RNA Primer</div>
+            <div class="legend-item"><div class="dot" style="background: var(--text-main)"></div>Helicase</div>
+        </div>
+
+        <button class="reset" id="resetBtn">Reset Simulation</button>
+    </div>
+</main>
+
+<footer>
+    &copy; 2024 Wynscape Interactives. All rights reserved.
+</footer>
+
+<script>
+    /**
+     * SECURITY & ANTI-DEBUGGING
+     */
+    document.addEventListener('contextmenu', event => event.preventDefault());
+    document.onkeydown = function(e) {
+        if(e.keyCode == 123) return false; 
+        if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false; 
+        if(e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false; 
+        if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false; 
+    }
+
+    /**
+     * SETUP & CONSTANTS
+     */
+    const canvas = document.getElementById('dnaCanvas');
+    const ctx = canvas.getContext('2d');
+    const slider = document.getElementById('helicaseSlider');
+    const infoBox = document.getElementById('instructionText').querySelector('span');
+    const toast = document.getElementById('toast');
+
+    // Graphics Settings
+    let width, height;
+    const STRAND_GAP = 100; // Vertical distance between unzipped strands
+    const BASE_PAIR_SPACING = 20; 
+    
+    // Game State
+    let forkProgress = 0.1; // 0.0 to 1.0 (Percentage of canvas width unzipped)
+    let fragments = []; // Array of synthesized DNA segments
+    
+    /**
+     * Fragment Structure:
+     * {
+     *   strand: 'top' | 'bottom',
+     *   startX: number, // Pixel position where primer was placed
+     *   currentX: number, // Pixel position of current growth
+     *   direction: 1 | -1, // 1 = Right (Leading), -1 = Left (Lagging)
+     *   type: 'primer' // initially, becomes 'dna' visually
+     * }
+     */
+
+    function resize() {
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        width = rect.width;
+        height = rect.height;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.scale(dpr, dpr);
+    }
+    
+    // Initial resize
+    resize();
+    window.addEventListener('resize', resize);
+
+    /**
+     * INPUT HANDLING
+     */
+    slider.addEventListener('input', (e) => {
+        forkProgress = parseInt(e.target.value) / 100;
+        
+        // Prevent closing the fork too much if synthesis has happened (optional realism)
+        // For this interactive, we allow free movement to let user explore
+        
+        updateInstructions();
+    });
+
+    canvas.addEventListener('click', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const clickY = e.clientY - rect.top;
+        
+        const forkX = getForkX();
+        const topY = height/2 - STRAND_GAP/2;
+        const bottomY = height/2 + STRAND_GAP/2;
+        
+        // Interaction Zone Tolerance
+        const tol = 30;
+
+        // Check if click is in the unzipped region
+        if (clickX < forkX) {
+            
+            // 1. Clicked Top Strand?
+            if (Math.abs(clickY - topY) < tol) {
+                tryAddPrimer('top', clickX);
+            }
+            
+            // 2. Clicked Bottom Strand?
+            else if (Math.abs(clickY - bottomY) < tol) {
+                tryAddPrimer('bottom', clickX);
+            }
+        } else {
+            showToast("Unzip the DNA first!");
+        }
+    });
+
+    function getForkX() {
+        // Map 0-100 slider to 10% - 90% of canvas width
+        return width * (0.1 + (forkProgress * 0.8));
+    }
+
+    function tryAddPrimer(strand, x) {
+        const forkX = getForkX();
+
+        if (strand === 'top') {
+            // LEADING STRAND LOGIC
+            // Template is 3'->5' (L->R). New strand grows 5'->3' (L->R).
+            // User should place primer as far Left as possible to start.
+            
+            // Check if a primer already exists that covers this area
+            const existing = fragments.find(f => f.strand === 'top');
+            
+            if (existing) {
+                showToast("Leading strand already primed!");
+            } else {
+                // Ideally place near the start (left)
+                if (x < forkX) {
+                    addFragment('top', x, 1); // Direction 1 (Right)
+                    showToast("Primer added! Synthesizing Leading Strand.");
+                    infoBox.innerText = "Good job! The Leading strand synthesizes continuously towards the fork.";
+                }
+            }
+        } 
+        else if (strand === 'bottom') {
+            // LAGGING STRAND LOGIC
+            // Template is 5'->3' (L->R). New strand grows 5'->3' (R->L).
+            // User must place primer near the fork.
+            
+            // Check for overlaps. 
+            // We allow multiple fragments on bottom.
+            // Check if we are clicking inside an existing fragment
+            const overlap = fragments.find(f => 
+                f.strand === 'bottom' && x <= f.startX && x >= f.currentX
+            );
+
+            if (!overlap) {
+                addFragment('bottom', x, -1); // Direction -1 (Left)
+                showToast("Primer added! Creating Okazaki Fragment.");
+                infoBox.innerText = "Notice: As the fork opens, you will need to add more primers to the gap.";
+            }
+        }
+    }
+
+    function addFragment(strand, startX, direction) {
+        fragments.push({
+            strand: strand,
+            startX: startX,      // Where primer sits
+            currentX: startX,    // Tip of the growing DNA
+            direction: direction,
+            active: true
+        });
+    }
+
+    function showToast(msg) {
+        toast.innerText = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+
+    function updateInstructions() {
+        const forkX = getForkX();
+        if (forkProgress < 0.2) {
+            infoBox.innerText = "Use the slider to act as Helicase and unzip the DNA.";
+        } else if (fragments.length === 0) {
+            infoBox.innerText = "The strands are exposed! Click on the Top or Bottom strand to attach an RNA Primer.";
+        }
+    }
+
+    /**
+     * SIMULATION LOOP
+     */
+    function update() {
+        const forkX = getForkX();
+
+        fragments.forEach(f => {
+            if (!f.active) return;
+
+            // Growth Speed
+            const speed = 2; 
+
+            if (f.direction === 1) { 
+                // Leading (Top) -> Grows Right
+                // Stop if we hit the fork
+                if (f.currentX < forkX - 10) {
+                    f.currentX += speed;
+                }
+            } else { 
+                // Lagging (Bottom) -> Grows Left
+                // Stop if we hit the end of canvas OR another fragment
+                let blocked = false;
+                
+                // Check collision with "previous" fragment (which is to the left)
+                // Find fragment on same strand whose startX is < this.currentX
+                const neighbor = fragments.find(n => 
+                    n.strand === 'bottom' && n !== f && Math.abs(n.startX - f.currentX) < 5
+                );
+
+                if (neighbor || f.currentX <= 20) {
+                    blocked = true;
+                    f.active = false; // DNA Ligase would join them here
+                }
+
+                if (!blocked) {
+                    f.currentX -= speed;
+                }
+            }
+        });
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, width, height);
+
+        const forkX = getForkX();
+        const centerY = height / 2;
+        const topY = centerY - STRAND_GAP/2;
+        const bottomY = centerY + STRAND_GAP/2;
+
+        // 1. Draw Template Strands (Blue)
+        ctx.strokeStyle = '#2563eb';
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+
+        // Top Strand (Single)
+        ctx.beginPath();
+        ctx.moveTo(20, topY);
+        ctx.lineTo(forkX, topY);
+        ctx.stroke();
+
+        // Bottom Strand (Single)
+        ctx.beginPath();
+        ctx.moveTo(20, bottomY);
+        ctx.lineTo(forkX, bottomY);
+        ctx.stroke();
+
+        // Double Helix (Right side)
+        ctx.beginPath();
+        ctx.moveTo(forkX, topY);
+        // Draw a simple representation of coiled DNA
+        for (let x = forkX; x < width; x+=5) {
+            const progress = (x - forkX) / 20;
+            const offset = Math.sin(progress) * (STRAND_GAP/2);
+            ctx.lineTo(x, centerY - offset); // Top-ish
+        }
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(forkX, bottomY);
+        for (let x = forkX; x < width; x+=5) {
+            const progress = (x - forkX) / 20;
+            const offset = Math.sin(progress + Math.PI) * (STRAND_GAP/2); // Phase shifted
+            ctx.lineTo(x, centerY - offset); // Bottom-ish
+        }
+        ctx.stroke();
+
+        // Draw Base Pairs in the Helix
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#cbd5e1';
+        for (let x = forkX + 10; x < width; x+=BASE_PAIR_SPACING) {
+            const progress = (x - forkX) / 20;
+            const y1 = centerY - Math.sin(progress) * (STRAND_GAP/2);
+            const y2 = centerY - Math.sin(progress + Math.PI) * (STRAND_GAP/2);
+            
+            ctx.beginPath();
+            ctx.moveTo(x, y1);
+            ctx.lineTo(x, y2);
+            ctx.stroke();
+        }
+
+        // 2. Draw Helicase (The Slider Position Indicator)
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath();
+        ctx.moveTo(forkX, topY);
+        ctx.lineTo(forkX + 20, centerY);
+        ctx.lineTo(forkX, bottomY);
+        ctx.fill();
+
+        // 3. Draw Fragments (New DNA)
+        fragments.forEach(f => {
+            const y = f.strand === 'top' ? topY - 12 : bottomY + 12; // Draw slightly outside
+            
+            // Primer Part (Red) - Length approx 20px
+            const primerLen = 20;
+            let primerEnd = f.startX + (f.direction * primerLen);
+            
+            // If the fragment hasn't grown past primer length, clamp it
+            // Logic simplification: Visual representation
+            
+            // Draw Primer
+            ctx.strokeStyle = '#f43f5e'; // RNA Red
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.moveTo(f.startX, y);
+            ctx.lineTo(f.startX + (f.direction * 15), y); 
+            ctx.stroke();
+
+            // Draw DNA Part (Green)
+            if (Math.abs(f.currentX - f.startX) > 15) {
+                ctx.strokeStyle = '#10b981'; // DNA Green
+                ctx.beginPath();
+                ctx.moveTo(f.startX + (f.direction * 15), y);
+                ctx.lineTo(f.currentX, y);
+                ctx.stroke();
+            }
+
+            // Draw Polymerase (Circle at the tip)
+            if (f.active) {
+                ctx.fillStyle = '#10b981';
+                ctx.beginPath();
+                ctx.arc(f.currentX, y, 6, 0, Math.PI*2);
+                ctx.fill();
+                
+                // Draw Arrow
+                ctx.fillStyle = '#fff';
+                ctx.font = '8px Arial';
+                ctx.fillText(f.direction === 1 ? ">" : "<", f.currentX - 2.5, y + 2.5);
+            }
+        });
+
+        // 4. Draw Hint Arrows for Polarity
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '10px sans-serif';
+        // Top Template (Runs 3' -> 5' L->R)
+        // New strand must run 5' -> 3' (L->R)
+        
+        // Bottom Template (Runs 5' -> 3' L->R)
+        // New strand must run 5' -> 3' (R->L)
+    }
+
+    function loop() {
+        update();
+        draw();
+        requestAnimationFrame(loop);
+    }
+
+    /**
+     * INITIALIZATION
+     */
+    document.getElementById('resetBtn').addEventListener('click', () => {
+        fragments = [];
+        slider.value = 10;
+        forkProgress = 0.1;
+        updateInstructions();
+    });
+
+    loop();
+
+</script>
+</body>
+</html>
